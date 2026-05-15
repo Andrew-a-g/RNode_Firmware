@@ -129,7 +129,8 @@ void setup() {
     boot_seq();
   #endif
 
-  #if BOARD_MODEL != BOARD_RAK4631 && BOARD_MODEL != BOARD_HELTEC_T114 && BOARD_MODEL != BOARD_TECHO && BOARD_MODEL != BOARD_T3S3 && BOARD_MODEL != BOARD_TBEAM_S_V1 && BOARD_MODEL != BOARD_HELTEC32_V4
+  #if BOARD_MODEL != BOARD_RAK4631 && BOARD_MODEL != BOARD_HELTEC_T114 && BOARD_MODEL != BOARD_TECHO && BOARD_MODEL != BOARD_T3S3 && BOARD_MODEL != BOARD_TBEAM_S_V1 && BOARD_MODEL != BOARD_HELTEC32_V4 && \
+      BOARD_MODEL != BOARD_STATION_G2
     // Some boards need to wait until the hardware UART is set up before booting
     // the full firmware. In the case of the RAK4631 and Heltec T114, the line below will wait
     // until a serial connection is actually established with a master. Thus, it
@@ -1535,7 +1536,11 @@ void validate_status() {
               if (device_init()) {
                 hw_ready = true;
               } else {
-                hw_ready = false;
+                #if BOARD_MODEL == BOARD_STATION_G2
+                  hw_ready = true;
+                #else
+                  hw_ready = false;
+                #endif
               }
             #else
               hw_ready = true;

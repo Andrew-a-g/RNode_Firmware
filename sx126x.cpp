@@ -133,8 +133,11 @@ bool sx126x::preInit() {
   pinMode(_ss, OUTPUT);
   digitalWrite(_ss, HIGH);
   
-  #if BOARD_MODEL == BOARD_T3S3 || BOARD_MODEL == BOARD_HELTEC32_V3 || BOARD_MODEL == BOARD_HELTEC32_V4 || BOARD_MODEL == BOARD_TDECK || BOARD_MODEL == BOARD_XIAO_S3
+  #if BOARD_MODEL == BOARD_T3S3 || BOARD_MODEL == BOARD_HELTEC32_V3 || BOARD_MODEL == BOARD_HELTEC32_V4 || BOARD_MODEL == BOARD_TDECK || BOARD_MODEL == BOARD_XIAO_S3 || BOARD_MODEL == BOARD_STATION_G2
     SPI.begin(pin_sclk, pin_miso, pin_mosi, pin_cs);
+  #if BOARD_MODEL == BOARD_STATION_G2
+    setSPIFrequency(10E6);
+  #endif
   #elif BOARD_MODEL == BOARD_TECHO
     SPI.setPins(pin_miso, pin_sclk, pin_mosi);
     SPI.begin();
@@ -342,6 +345,9 @@ int sx126x::begin(long frequency) {
   calibrate();
   calibrate_image(frequency);
   enableTCXO();
+  #if BOARD_MODEL == BOARD_STATION_G2
+    delay(5);
+  #endif
   loraMode();
   standby();
 
@@ -358,7 +364,11 @@ int sx126x::begin(long frequency) {
   setFrequency(frequency);
   setTxPower(2);
   enableCrc();
-  writeRegister(REG_LNA_6X, 0x96); // Set LNA boost
+  #if BOARD_MODEL == BOARD_STATION_G2
+    writeRegister(REG_LNA_6X, 0x94); // Power saving gain — external LNA dominates
+  #else
+    writeRegister(REG_LNA_6X, 0x96); // Set LNA boost
+  #endif
   uint8_t basebuf[2] = {0}; // Set base addresses
   executeOpcode(OP_BUFFER_BASE_ADDR_6X, basebuf, 2);
 
@@ -702,6 +712,8 @@ void sx126x::enableTCXO() {
     #elif BOARD_MODEL == BOARD_TECHO
       uint8_t buf[4] = {MODE_TCXO_1_8V_6X, 0x00, 0x00, 0xFF};
     #elif BOARD_MODEL == BOARD_HELTEC32_V4
+      uint8_t buf[4] = {MODE_TCXO_1_8V_6X, 0x00, 0x00, 0xFF};
+    #elif BOARD_MODEL == BOARD_STATION_G2
       uint8_t buf[4] = {MODE_TCXO_1_8V_6X, 0x00, 0x00, 0xFF};
     #endif
     executeOpcode(OP_DIO3_TCXO_CTRL_6X, buf, 4);
